@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import logout
 from django.core.mail import EmailMultiAlternatives
-from core.core.settings import EMAIL_HOST_USER
+from core.settings.base import EMAIL_HOST_USER
 
 from .models import CustomUser,CodesVerification
 from .serializers import UserSerializer, RegisterSerializer,UserTokenSerializer,LoginSerializer, ValidateCodeSerializer
@@ -54,7 +54,6 @@ class LogoutView(generics.GenericAPIView):
     
     def post(self, request):
         token_request = request.data.get("Token", None)
-        print(token_request)
         token = Token.objects.get(key=token_request)
         if token:
             user = CustomUser.objects.get(auth_token=token)

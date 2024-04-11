@@ -21,9 +21,16 @@ class CustomUser(AbstractUser):
     status = models.BooleanField(default=False)
     date_start = models.DateField(blank=True,null=True)
     rol = models.ForeignKey(Roles, on_delete=models.DO_NOTHING, null=True, blank=True) 
-
+    
+    
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'password']
 
     def __str__(self):
         return f"{self.get_full_name()}"
+    
+class CodesVerification(models.Model):
+    changePasswordCode = models.CharField(max_length=10,unique=True)
+    user = models.ForeignKey(CustomUser, null=True, on_delete=models.SET_NULL) 
+    def __str__(self):
+        return f"{self.user}"
