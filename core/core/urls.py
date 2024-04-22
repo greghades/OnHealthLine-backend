@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-
+from .settings import prod
+from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/',include('aplications.authentication.urls')),
-]
+]+ static(prod.STATIC_URL, document_root=prod.STATIC_ROOT)
