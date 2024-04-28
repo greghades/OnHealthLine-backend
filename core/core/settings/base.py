@@ -53,7 +53,7 @@ CORS_ORIGIN_WHITELIST = (
     'http://localhost',
     'http://localhost:3000',
     'http://localhost:4200',
-    'http://52.91.221.234',
+    'http://52.23.237.218',
 )
 
 
