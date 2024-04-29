@@ -24,18 +24,33 @@ print()
 
 # Application definition
 
-INSTALLED_APPS = [
+
+
+DEFAULT_APPS =[
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+THIRD_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
-    'aplications.authentication',
     'corsheaders',
 ]
+
+LOCAL_APPS = [
+    'aplications.authentication',
+    'aplications.citas',
+    'aplications.documentos',
+    'aplications.medico',
+    'aplications.paciente',
+    'aplications.suscripciones',
+]
+
+INSTALLED_APPS = DEFAULT_APPS + THIRD_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

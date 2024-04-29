@@ -1,7 +1,5 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
-from django.contrib.sessions.models import Session
-from datetime import datetime
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -9,46 +7,108 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import logout
 from django.core.mail import EmailMultiAlternatives
 from core.settings.base import EMAIL_HOST_USER
+from aplications.paciente.serializers import PacienteSerializer
+from aplications.medico.serializers import MedicoSerializer
+from rest_framework.views import APIView
 
 from .models import CustomUser,CodesVerification
 from .serializers import UserSerializer, RegisterSerializer,UserTokenSerializer,LoginSerializer, ValidateCodeSerializer
 from .messages.responses_ok import CODE_VALIDATED, DELETED_USER, EMAIL_SEND, LOGIN_OK, PASSWORD_CHANGED, SIGNUP_OK,LOGOUT_OK, UPDATE_OK
 from .messages.responses_error import CHANGED_PASSWORD_ERROR, CODER_VERIFICATION_ERROR, LOGIN_CREDENTIALS_REQUIRED_ERROR, LOGIN_CREDENTIALS_ERROR,LOGOUT_ERROR, NOT_FOUND_USER
 from .helpers.content_emails import PASSWORD_RESET
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
 from .helpers.randCodes import generatedCode
+
 # Create your views here.
+
+
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
-    def get(self, request):
-        data_response = {"msg": "Método GET no permitido"}
-        return Response(data_response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def post(self, request):
         email = request.data.get("email", None)
         password = request.data.get("password", None)
-    
+        user = CustomUser.objects.get(email=email)
+        
         if email is None or password is None:
             return Response(LOGIN_CREDENTIALS_REQUIRED_ERROR, status=status.HTTP_400_BAD_REQUEST)
         else:
-            user = authenticate(email = email, password = password)
+            try:
+                user = CustomUser.objects.get(email=email)
+            except CustomUser.DoesNotExist:
+                 return Response(LOGIN_CREDENTIALS_ERROR, status=status.HTTP_401_UNAUTHORIZED)
             
-            if user is not None: 
+            if user is not None and user.password == password: 
                 if user.is_active:
-                    token,create = Token.objects.get_or_create(user=user)
-                    rspn = {
-                        "Token":token.key,
-                        "user": UserTokenSerializer(user, context = self.get_serializer_context()).data,
-                        "message": LOGIN_OK
-                    }
-                    if create:
-                        return Response( rspn, status=status.HTTP_200_OK)
-                    else:
+                # Obtener o crear el token
+                    token,created = Token.objects.get_or_create(user=user)
+                    
+                    # Si el token ya existe, eliminarlo y crear uno nuevo
+                    if not created:
                         token.delete()
                         token = Token.objects.create(user=user)
-                        return Response( rspn, status=status.HTTP_200_OK)
+
+                    # Devolver la respuesta con el token actualizado
+                    rspn = {
+                        "Token": token.key,
+                        "user": UserTokenSerializer(user, context=self.get_serializer_context()).data,
+                        "message": LOGIN_OK
+                    }
+                return Response(rspn, status=status.HTTP_200_OK)
             else:
                 return Response(LOGIN_CREDENTIALS_ERROR, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class RegistroView(generics.GenericAPIView):
+
+    serializer_class = RegisterSerializer
+
+    def post(self, request):
+        # Serializar los datos del usuario
+        user_serializer = UserSerializer(data=request.data)
+        
+        if user_serializer.is_valid():
+            # Crear el usuario
+            user = user_serializer.save()
+
+            # Obtener el tipo de usuario
+            user_type = request.data.get('user_type')
+            
+            # Verificar el tipo de usuario y guardar los detalles adicionales si es necesario
+            if user_type == 'PACIENTE':
+                paciente_data = {
+                    'user': user.id,
+                    'birthdate': request.data.get('birthdate'),
+                    'address': request.data.get('address')
+                }
+                paciente_serializer = PacienteSerializer(data=paciente_data)
+                
+                if paciente_serializer.is_valid():
+                    paciente_serializer.save()
+                    return Response({'message': 'Paciente registrado exitosamente'}, status=status.HTTP_201_CREATED)
+                else:
+                    user.delete()
+                    return Response(paciente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif user_type == 'MEDICO':
+                medico_data = {
+                    'user': user.id,
+                    'id_especialidad': request.data.get('id_especialidad')
+                }
+                medico_serializer = MedicoSerializer(data=medico_data)
+                
+                if medico_serializer.is_valid():
+                    medico_serializer.save()
+                    return Response({'message': 'Médico registrado exitosamente'}, status=status.HTTP_201_CREATED)
+                else:
+                    user.delete()
+                    return Response(medico_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                user.delete()
+                return Response({'message': 'Tipo de usuario no válido'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(generics.GenericAPIView):
     
@@ -62,20 +122,6 @@ class LogoutView(generics.GenericAPIView):
             
             return Response(LOGOUT_OK,status=status.HTTP_200_OK)
         return Response(LOGOUT_ERROR, status=status.HTTP_400_BAD_REQUEST)      
-
-class SignUpView(generics.GenericAPIView):
-
-    serializer_class = RegisterSerializer
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response(
-            {
-                "user": UserSerializer(user, context = self.get_serializer_context()).data,
-                "message": SIGNUP_OK
-            },
-        status=status.HTTP_200_OK)
 
 class UpdateUser(generics.RetrieveUpdateAPIView):
     

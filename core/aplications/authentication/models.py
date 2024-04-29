@@ -2,25 +2,22 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
-class Roles(models.Model):
-    rol_name = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.rol_name
+SEX_OPTIONS = (
+        ('1', 'Masculino'),
+        ('2', 'Femenimo'),
+    )
 
 class CustomUser(AbstractUser):
+    id = models.CharField(max_length=100,primary_key=True)
     username = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    code_employee = models.CharField(max_length=15,null=True)
-    ine = models.CharField(max_length=20, null=False)
-    rfc = models.CharField(max_length=15, null=False)
-    nss = models.CharField(max_length=20, null=False)
+    password = models.CharField(max_length=150,null=False)
     name = models.CharField(max_length=50, null=False)
     last_name = models.CharField(max_length=50, null=False)
+    sex = models.CharField(max_length=50, null=True,choices=SEX_OPTIONS)
+    age =  models.CharField(max_length=2,null=True)
+    phone = models.CharField(max_length=150,null=True)
     email = models.EmailField(max_length=200, unique=True)
-    password = models.CharField(max_length=150,null=False)
-    status = models.BooleanField(default=False)
-    date_start = models.DateField(blank=True,null=True)
-    rol = models.ForeignKey(Roles, on_delete=models.DO_NOTHING, null=True, blank=True) 
+    user_type = models.CharField(max_length=10, choices=(('PACIENTE', 'Paciente'), ('MEDICO', 'Médico')), null=True)
     
     
     USERNAME_FIELD = 'email'
@@ -28,7 +25,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name()}"
-    
+
 class CodesVerification(models.Model):
     changePasswordCode = models.CharField(max_length=10,unique=True)
     user = models.ForeignKey(CustomUser, null=True, on_delete=models.SET_NULL) 
