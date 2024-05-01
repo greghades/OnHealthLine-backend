@@ -5,10 +5,10 @@ from .models import CustomUser,CodesVerification
 
 # Register your models here.
 class CustomUserAdmin(UserAdmin, admin.ModelAdmin):
-    list_display = ('id', "name", "last_name", "email","user_type", "date_joined")
+    list_display = ('id', "first_name", "last_name", "email","user_type", "date_joined")
     fieldsets = (
       ('Employee info', {
-          'fields': ('username','email','password','name','last_name','user_type')
+          'fields': ('username','email','password','first_name','last_name','user_type','is_staff')
       }),
    )
 

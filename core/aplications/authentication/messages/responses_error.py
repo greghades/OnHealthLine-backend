@@ -9,3 +9,7 @@ CODER_VERIFICATION_ERROR = {"Validated":False}
 CHANGED_PASSWORD_ERROR = {'Message':'Something went wrong'}
 
 NOT_FOUND_USER = {"Message":"User not found"}
+
+INACTIVE_USER_ERROR = {"Message":"User not active"}
+
+USER_ALREADY_EXISTS_ERROR =  {"Message":"User already exists"}
