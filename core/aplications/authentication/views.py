@@ -115,7 +115,7 @@ class RegistroView(generics.GenericAPIView):
                 user.delete()
                 return Response({'message': 'Tipo de usuario no válido'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(USER_ALREADY_EXISTS_ERROR, status=status.HTTP_400_BAD_REQUEST)
+            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(generics.GenericAPIView):
     

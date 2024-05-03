@@ -2,10 +2,8 @@ from django.shortcuts import render
 
 # Create your views here.
 from uuid import UUID
-#from knox.auth import TokenAuthentication
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -19,14 +17,27 @@ from aplications.externals.nocodeapi.google_calendar import (
     nocodeapi_google_calendar_edit_event,
     nocodeapi_google_calendar_delete_event
 )
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from aplications.authentication.models import CustomUser
 from .utils import get_event_info
 
 
 class CreateEventView(CreateAPIView):
-    # authentication_classes = (TokenAuthentication,)
-    # permission_classes = (IsAuthenticated,)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = CitaSerializer
+    queryset = Cita_Medica.objects.none()
+
+    def doctor_tiene_horario_disponible(self, doctor_id, start_at, end_at):
+        # Buscar si hay algún horario para el doctor en el rango de fechas y horas especificado
+        try:
+            horarios = Horario.objects.filter(doctor__user__id=doctor_id, dia=start_at.date(), hora_inicio__lte=start_at.time(), hora_fin__gte=end_at.time())
+           
+        except Horario.DoesNotExist:
+            print("error")
+        # Si encontramos al menos un horario, significa que el doctor tiene disponible ese horario
+        return horarios.exists()
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -37,12 +48,6 @@ class CreateEventView(CreateAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Need email confirmed
-        if not request.user.email_confirmed:
-            return Response(
-                {"message": "email not confirmed, please check your mail for the confirmation mail"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -50,34 +55,30 @@ class CreateEventView(CreateAPIView):
 
         # Obtener el doctor y el usuario de la solicitud
         doctor_id = request.data.get('doctor_id')
-        usuario_id = request.data.get('usuario_id')
+        # usuario_id = request.data.get('usuario_id')
         
         medico = CustomUser.objects.get(id=doctor_id,user_type='MEDICO')
-        
+        print(medico.id)
 
 
         # Obtener la fecha y hora de inicio y fin de la cita
         start_at = serializer.validated_data['start_at']
         end_at = serializer.validated_data['end_at']
         
-        # Validar si el doctor tiene disponible el horario
-        if not self.doctor_tiene_horario_disponible(doctor_id, start_at, end_at):
+        # # Validar si el doctor tiene disponible el horario
+        if not self.doctor_tiene_horario_disponible(medico.id, start_at, end_at):
             raise ValidationError("El doctor no tiene disponible este horario")
         
 
-        response = serializer.save(doctor_id=doctor_id, usuario_id=usuario_id,attendee=[request.user.id], created_by=request.user)
+        response = serializer.save(doctor_id=doctor_id,attendee=[request.user.email,medico.email], created_by=request.user)
         google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email,medico.email)
         response.google_calendar_event_id = google_calendar_response
         response.invitation_sent = True
         response.save()
+        
         return Response({"message": "Event successfully created", "data": serializer.data}, status=status.HTTP_201_CREATED)
     
-    def doctor_tiene_horario_disponible(self, doctor_id, start_at, end_at):
-        # Buscar si hay algún horario para el doctor en el rango de fechas y horas especificado
-        horarios = Horario.objects.filter(doctor_id=doctor_id, dia=start_at.date(), hora_inicio__lte=start_at.time(), hora_fin__gte=end_at.time())
-        
-        # Si encontramos al menos un horario, significa que el doctor tiene disponible ese horario
-        return horarios.exists()
+    
 
 class EditEventView(UpdateAPIView):
     # authentication_classes = (TokenAuthentication,)

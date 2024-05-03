@@ -16,8 +16,9 @@ class Cita_Medica(models.Model):
     end_at = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=120, null=True, blank=True)
     invitation_sent = models.BooleanField(default=False)
-    doctor = models.ForeignKey(Medico, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name="Doctor")
     google_calendar_event_id = models.CharField(max_length=120, blank=True, null=True)
+    agendado = models.BooleanField()
 
     def __str__(self):
         return self.title

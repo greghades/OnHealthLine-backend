@@ -39,6 +39,7 @@ THIRD_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'knox',
 ]
 
 LOCAL_APPS = [
@@ -93,7 +94,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+}
 
 
 # Password validation
