@@ -24,8 +24,8 @@ from .utils import get_event_info
 
 
 class CreateEventView(CreateAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     serializer_class = CitaSerializer
     queryset = Cita_Medica.objects.none()
 

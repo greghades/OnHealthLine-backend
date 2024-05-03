@@ -6,9 +6,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import logout
 from django.core.mail import EmailMultiAlternatives
+from aplications.paciente.models import Paciente
+from aplications.medico.models import Medico,Especialidad
 from core.settings.base import EMAIL_HOST_USER
 from aplications.paciente.serializers import PacienteSerializer
-from aplications.medico.serializers import MedicoSerializer
+from aplications.medico.serializers import MedicoSerializer,EspecialidadSerializer
 from rest_framework.views import APIView
 
 from .models import CustomUser,CodesVerification
@@ -53,12 +55,55 @@ class LoginView(generics.GenericAPIView):
                 token.delete()
                 token = Token.objects.create(user=user)
 
-            # Devolver la respuesta con el token actualizado
-            rspn = {
-                "Token": token.key,
-                "user": UserTokenSerializer(user, context=self.get_serializer_context()).data,
-            }
-            return Response(rspn, status=status.HTTP_200_OK)
+            if user.user_type == 'PACIENTE':
+                # Obtener el objeto Paciente asociado al usuario
+                paciente = Paciente.objects.get(user=user)
+                
+                # Serializar los datos del paciente
+                paciente_data = PacienteSerializer(paciente, context=self.get_serializer_context()).data
+                
+                # Serializar los datos del usuario
+                user_data = UserTokenSerializer(user, context=self.get_serializer_context()).data
+                
+                # Incluir los datos del paciente en el diccionario user_data
+                user_data['birthdate'] = paciente_data['birthdate']
+                user_data['address'] = paciente_data['address']
+                # Devolver la respuesta con el token actualizado y la información del usuario y paciente
+                rspn = {
+                    "token": token.key,
+                    "user": user_data,
+                }
+                return Response(rspn, status=status.HTTP_200_OK)
+            
+
+            if user.user_type == 'MEDICO':
+                # Obtener el objeto Médico asociado al usuario
+                medico = Medico.objects.get(user=user)
+                
+                # Obtener la especialidad asociada al médico
+                especialidad_id = medico.id_especialidad_id
+                
+                # Obtener el objeto de la especialidad utilizando el ID
+                especialidad = Especialidad.objects.get(pk=especialidad_id)
+                
+                # Serializar los datos del médico
+                medico_data = MedicoSerializer(medico, context=self.get_serializer_context()).data
+                
+                # Serializar los datos del usuario
+                user_data = UserTokenSerializer(user, context=self.get_serializer_context()).data
+                
+                especialidad_data = EspecialidadSerializer(especialidad, context=self.get_serializer_context()).data
+
+                # Incluir los datos de la especialidad y el nombre del médico en el diccionario user_data
+                user_data['especialidad'] = especialidad_data
+                user_data['descripcion'] = medico_data['descripcion']
+                
+                # Devolver la respuesta con el token actualizado y la información del usuario y médico
+                rspn = {
+                    "token": token.key,
+                    "user": user_data,
+                }
+                return Response(rspn, status=status.HTTP_200_OK)
 
         except CustomUser.DoesNotExist:
             return Response(LOGIN_CREDENTIALS_ERROR, status=status.HTTP_401_UNAUTHORIZED)
