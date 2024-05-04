@@ -25,6 +25,8 @@ class Medico(models.Model):
 class Horario(models.Model):
     doctor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     #dia = models.DateField()
+    titulo = models.TextField(max_length=200,null=True, blank=True)
+    descripcion = models.TextField(max_length=500,null=True, blank=True)
     dias_semana =  ArrayField(models.CharField(max_length=120, null=True, blank=True), null=True, blank=True)
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
