@@ -35,7 +35,7 @@ class CreateEventView(CreateAPIView):
         cita_date = start_at.date()
         
         # Buscar si hay algún horario para el doctor en el día de la cita
-        horarios = Horario.objects.filter(doctor__user__id=doctor_id, dia=cita_date)
+        horarios = Horario.objects.filter(doctor_id=doctor_id)
         
         # Iterar sobre los horarios para verificar si la cita está dentro de algún horario
         for horario in horarios:
@@ -88,6 +88,7 @@ class CreateEventView(CreateAPIView):
         # Actualizar el campo google_calendar_event_id de la cita
         cita.google_calendar_event_id = google_calendar_response
         cita.invitation_sent = True
+        print(google_calendar_response)
         cita.save()
 
 

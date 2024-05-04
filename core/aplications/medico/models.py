@@ -1,5 +1,8 @@
 from django.db import models
 from aplications.authentication.models import CustomUser
+
+from django.contrib.postgres.fields import ArrayField
+
 from aplications.paciente.models import Paciente
 # Create your models here.
 
@@ -20,10 +23,11 @@ class Medico(models.Model):
 
 
 class Horario(models.Model):
-    doctor = models.ForeignKey(Medico, on_delete=models.CASCADE)
-    dia = models.DateField()
+    doctor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    #dia = models.DateField()
+    dias_semana =  ArrayField(models.CharField(max_length=120, null=True, blank=True), null=True, blank=True)
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
 
     def __str__(self):
-        return f"{self.doctor} - {self.dia} - {self.hora_inicio} a {self.hora_fin}"
+        return f"{self.doctor} - {self.dias_semana} - {self.hora_inicio} a {self.hora_fin}"
