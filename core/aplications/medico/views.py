@@ -24,7 +24,24 @@ class Get_Especialidades(ListAPIView):
 
 class Create_Horario(CreateAPIView):
     serializer_class = HorarioSerializer
-    model = Horario
+
+    def perform_create(self, serializer):
+        # Obtenemos los datos de la solicitud
+        doctor_id = self.request.data.get('doctor')
+        dias_semana = self.request.data.get('dias_semana')
+        hora_inicio = self.request.data.get('hora_inicio')
+        hora_fin = self.request.data.get('hora_fin')
+
+        # Buscamos si ya existe un horario para el mismo doctor
+        horario_existente = Horario.objects.filter(doctor_id=doctor_id, dias_semana=dias_semana, hora_inicio=hora_inicio, hora_fin=hora_fin).first()
+
+        if horario_existente:
+            # Si existe, actualizamos el horario existente
+            serializer.instance = horario_existente
+            serializer.update(horario_existente, self.request.data)
+        else:
+            # Si no existe, creamos un nuevo horario
+            serializer.save()
 
 class Get_Horarios(ListAPIView):
     # authentication_classes = [TokenAuthentication]

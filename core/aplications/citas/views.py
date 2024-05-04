@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView,ListAPIView
 from django.db import transaction
-from .serializers import CitaSerializer
+from .serializers import CitaSerializer,CitasListSerializer
 from .models import Cita_Medica
 from aplications.medico.models import Medico,Horario
 from aplications.externals.nocodeapi.google_calendar import (
@@ -176,7 +176,7 @@ class JoinEventView(UpdateAPIView):
 class ListarCitasAgendadasPorUsuario(ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = CitaSerializer
+    serializer_class = CitasListSerializer
 
     def get_queryset(self):
         # Verificar si el usuario está autenticado
