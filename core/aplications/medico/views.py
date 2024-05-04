@@ -5,6 +5,8 @@ from aplications.authentication.models import CustomUser
 from .serializers import EspecialidadSerializer,HorarioSerializer,MedicoSerializer,MedicoListSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 # Create your views here.
 
 
@@ -25,12 +27,27 @@ class Create_Horario(CreateAPIView):
     model = Horario
 
 class Get_Horarios(ListAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     serializer_class = HorarioSerializer
     
     def get_queryset(self):
+        # Obtener el parámetro de consulta 'id_medico' de la solicitud
+        id_medico = self.request.query_params.get('id_medico')
 
-        horarios = Horario.objects.filter(doctor=self.request.user.id)
+        # Verificar si se proporcionó el parámetro 'id_medico'
+        if id_medico is not None:
+            # Filtrar los horarios por el id del médico proporcionado
+            horarios = Horario.objects.filter(doctor=id_medico)
+            return horarios
+        else:
+            # Si no se proporcionó 'id_medico', devolver una lista vacía
+            return Horario.objects.none()
 
-        return horarios
+    def list(self, request, *args, **kwargs):
+        # Obtener la consulta filtrada
+        queryset = self.get_queryset()
+        
+        # Serializar los datos y devolver la respuesta
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

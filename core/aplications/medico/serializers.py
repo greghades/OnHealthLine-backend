@@ -30,11 +30,12 @@ class MedicoSerializer(serializers.ModelSerializer):
 class MedicoListSerializer(serializers.ModelSerializer):
    
     especialidad = serializers.CharField(source='id_especialidad.name')
+    cedula = serializers.CharField(source='user.id')
     nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = Medico
-        fields = ['id', 'nombre', 'especialidad', 'descripcion']
+        fields = ['cedula', 'nombre', 'especialidad', 'descripcion']
 
     def get_nombre(self, obj):
         # Aquí puedes proporcionar la lógica para obtener el nombre del médico
