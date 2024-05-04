@@ -31,5 +31,5 @@ class Horario(models.Model):
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
 
-    def __str__(self):
-        return f"{self.doctor} - {self.dias_semana} - {self.hora_inicio} a {self.hora_fin}"
+    # def __str__(self):
+    #     return f"{self.doctor} - {self.dias_semana} - {self.hora_inicio} a {self.hora_fin}"

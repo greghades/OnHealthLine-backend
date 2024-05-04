@@ -1,18 +1,19 @@
 from aplications.citas.models import Cita_Medica
+from aplications.medico.models import Horario
 from aplications.citas.utils import request_wrapper, ThirdPartyAPIConnectionError
 
 
 NOCODEAPI_GOOGLE_CALENDAR_BASE_URL = "https://v1.nocodeapi.com/greg251325/calendar/SvOedyqlpEwxfWMh"
 
 
-def nocodeapi_google_calendar_create_event(cita: Cita_Medica, user_email: str,doctor_email: str):
+def nocodeapi_google_calendar_create_event(cita: Cita_Medica, user_email: str,doctor_email: str,horarios):
     """Create an event on google calendar using nocodeapi."""
     response_data = None
     # payload to be sent to nocodeapi to create an event
     request_data = {
-        "summary": cita['title'],
+        "summary": horarios.titulo,
         "location": cita['location'],
-        "description": cita['description'],
+        "description": horarios.descripcion,
         "start": {"dateTime": cita['start_at']},
         "end": {"dateTime": cita['end_at']},
         "locked": True,

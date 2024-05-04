@@ -74,6 +74,9 @@ class CreateEventView(CreateAPIView):
         start_at = serializer.validated_data['start_at']
         end_at = serializer.validated_data['end_at']
         
+        horarios = Horario.objects.filter(doctor_id=doctor_id).first()
+        print(horarios.titulo)
+
         # Validar si el doctor tiene disponible el horario
         if not self.doctor_tiene_horario_disponible(medico.id, start_at, end_at):
             raise ValidationError("El doctor no tiene disponible este horario")
@@ -83,12 +86,12 @@ class CreateEventView(CreateAPIView):
             cita = serializer.save(doctor_id=doctor_id, attendee=[request.user.email, medico.email], created_by=request.user, agendado=True)
 
         # Llamar a la función para crear el evento en el calendario de Google
-        google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email, medico.email)
+        google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email, medico.email,horarios)
 
         # Actualizar el campo google_calendar_event_id de la cita
         cita.google_calendar_event_id = google_calendar_response
         cita.invitation_sent = True
-        print(google_calendar_response)
+
         cita.save()
 
 
