@@ -1,11 +1,13 @@
 from django.shortcuts import render
-from rest_framework.generics import ListAPIView,CreateAPIView
+from rest_framework.generics import ListAPIView,CreateAPIView,RetrieveUpdateAPIView
 from .models import Especialidad,Horario,Medico
 from aplications.authentication.models import CustomUser
 from .serializers import EspecialidadSerializer,HorarioSerializer,MedicoSerializer,MedicoListSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
 
 # Create your views here.
 
@@ -28,17 +30,17 @@ class Create_Horario(CreateAPIView):
     def perform_create(self, serializer):
         # Obtenemos los datos de la solicitud
         doctor_id = self.request.data.get('doctor')
-        dias_semana = self.request.data.get('dias_semana')
-        hora_inicio = self.request.data.get('hora_inicio')
-        hora_fin = self.request.data.get('hora_fin')
+
+
+        doctor_instance = get_object_or_404(CustomUser, pk=doctor_id)
 
         # Buscamos si ya existe un horario para el mismo doctor
-        horario_existente = Horario.objects.filter(doctor_id=doctor_id, dias_semana=dias_semana, hora_inicio=hora_inicio, hora_fin=hora_fin).first()
-
+        horario_existente = Horario.objects.filter(doctor_id=doctor_id).first()
+        serializer.validated_data['doctor'] = doctor_instance
+        
         if horario_existente:
-            # Si existe, actualizamos el horario existente
             serializer.instance = horario_existente
-            serializer.update(horario_existente, self.request.data)
+            serializer.save()
         else:
             # Si no existe, creamos un nuevo horario
             serializer.save()
