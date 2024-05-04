@@ -3,13 +3,13 @@ from .models import Medico,Especialidad,Horario
 from aplications.authentication.models import CustomUser
 class MedicoSerializer(serializers.ModelSerializer):
 
-    especialidad = serializers.CharField(source='id_especialidad.name')
-    nombre = serializers.SerializerMethodField()
+    # especialidad = serializers.CharField(source='id_especialidad.name')
+    # nombre = serializers.SerializerMethodField()
 
     class Meta:
         
         model = Medico
-        fields = ['id', 'nombre', 'especialidad', 'descripcion']
+        fields = ['user', 'id_especialidad', 'descripcion']
    
     def create(self, validated_data):
         # Crear un nuevo usuario
@@ -25,7 +25,21 @@ class MedicoSerializer(serializers.ModelSerializer):
         return user
     def get_nombre(self, obj):
         return f'Dr. {obj.user.get_full_name()}' if obj.user.sex == 'M' else f'Dra. {obj.user.get_full_name()}'
-    
+
+
+class MedicoListSerializer(serializers.ModelSerializer):
+   
+    especialidad = serializers.CharField(source='id_especialidad.name')
+    nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Medico
+        fields = ['id', 'nombre', 'especialidad', 'descripcion']
+
+    def get_nombre(self, obj):
+        # Aquí puedes proporcionar la lógica para obtener el nombre del médico
+        return f'Dr. {obj.user.get_full_name()}'  # Suponiendo que el nombre del médico está en el campo user
+
 class EspecialidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Especialidad

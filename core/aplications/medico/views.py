@@ -2,14 +2,14 @@ from django.shortcuts import render
 from rest_framework.generics import ListAPIView,CreateAPIView
 from .models import Especialidad,Horario,Medico
 from aplications.authentication.models import CustomUser
-from .serializers import EspecialidadSerializer,HorarioSerializer,MedicoSerializer
+from .serializers import EspecialidadSerializer,HorarioSerializer,MedicoSerializer,MedicoListSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 
 class ListAllDoctors(ListAPIView):
-    serializer_class = MedicoSerializer
+    serializer_class = MedicoListSerializer
     queryset = Medico.objects.all()
     
 

@@ -143,6 +143,7 @@ class RegistroView(generics.GenericAPIView):
                     return Response(paciente_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             elif user_type == 'MEDICO':
+                print(request.data.get('id_especialidad'))
                 medico_data = {
                     'user': user.id,
                     'id_especialidad': request.data.get('id_especialidad'),
