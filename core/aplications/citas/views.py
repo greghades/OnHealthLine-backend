@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView,ListAPIView
 from django.db import transaction
 from .serializers import CitaSerializer
 from .models import Cita_Medica
@@ -21,23 +21,38 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from aplications.authentication.models import CustomUser
 from .utils import get_event_info
-
+from django.utils import timezone
+import pytz
 
 class CreateEventView(CreateAPIView):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = CitaSerializer
     queryset = Cita_Medica.objects.none()
 
     def doctor_tiene_horario_disponible(self, doctor_id, start_at, end_at):
-        # Buscar si hay algún horario para el doctor en el rango de fechas y horas especificado
-        try:
-            horarios = Horario.objects.filter(doctor__user__id=doctor_id, dia=start_at.date(), hora_inicio__lte=start_at.time(), hora_fin__gte=end_at.time())
+    # Obtener el día de la cita
+        cita_date = start_at.date()
+        
+        # Buscar si hay algún horario para el doctor en el día de la cita
+        horarios = Horario.objects.filter(doctor__user__id=doctor_id, dia=cita_date)
+        
+        # Iterar sobre los horarios para verificar si la cita está dentro de algún horario
+        for horario in horarios:
+            hora_inicio = timezone.datetime.combine(cita_date, horario.hora_inicio)
+            hora_fin = timezone.datetime.combine(cita_date, horario.hora_fin)
+
+            hora_inicio_con_tz = timezone.make_aware(hora_inicio, pytz.utc)
+
+            hora_fin_con_tz = timezone.make_aware(hora_fin, pytz.utc)
            
-        except Horario.DoesNotExist:
-            print("error")
-        # Si encontramos al menos un horario, significa que el doctor tiene disponible ese horario
-        return horarios.exists()
+
+            # Verificar si la hora de inicio de la cita está después de la hora de inicio del horario
+            # y si la hora de fin de la cita está antes de la hora de fin del horario
+            if start_at >= hora_inicio_con_tz and end_at <= hora_fin_con_tz:
+                return True  # El doctor tiene disponible este horario
+        
+        return False  # El doctor no tiene disponible este horario
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
@@ -48,34 +63,34 @@ class CreateEventView(CreateAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-
         # Obtener el doctor y el usuario de la solicitud
         doctor_id = request.data.get('doctor_id')
-        # usuario_id = request.data.get('usuario_id')
-        
-        medico = CustomUser.objects.get(id=doctor_id,user_type='MEDICO')
-        print(medico.id)
-
+        medico = CustomUser.objects.get(id=doctor_id, user_type='MEDICO')
 
         # Obtener la fecha y hora de inicio y fin de la cita
         start_at = serializer.validated_data['start_at']
         end_at = serializer.validated_data['end_at']
         
-        # # Validar si el doctor tiene disponible el horario
+        # Validar si el doctor tiene disponible el horario
         if not self.doctor_tiene_horario_disponible(medico.id, start_at, end_at):
             raise ValidationError("El doctor no tiene disponible este horario")
         
+        # Crear la cita médica con el campo agendado en True
+        with transaction.atomic():
+            cita = serializer.save(doctor_id=doctor_id, attendee=[request.user.email, medico.email], created_by=request.user, agendado=True)
 
-        response = serializer.save(doctor_id=doctor_id,attendee=[request.user.email,medico.email], created_by=request.user)
-        google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email,medico.email)
-        response.google_calendar_event_id = google_calendar_response
-        response.invitation_sent = True
-        response.save()
-        
+        # Llamar a la función para crear el evento en el calendario de Google
+        google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email, medico.email)
+
+        # Actualizar el campo google_calendar_event_id de la cita
+        cita.google_calendar_event_id = google_calendar_response
+        cita.invitation_sent = True
+        cita.save()
+
+
         return Response({"message": "Event successfully created", "data": serializer.data}, status=status.HTTP_201_CREATED)
     
     
@@ -155,3 +170,22 @@ class JoinEventView(UpdateAPIView):
             nocodeapi_google_calendar_delete_event(cita.__dict__)
             cita.save()
             return Response({"message": "You have successfully removed this event"}, status=status.HTTP_200_OK)
+
+
+class ListarCitasAgendadasPorUsuario(ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = CitaSerializer
+
+    def get_queryset(self):
+        # Verificar si el usuario está autenticado
+        type_user = self.request.user.user_type
+
+        if not self.request.user.is_authenticated:
+            # Si el usuario no está autenticado, devolver un mensaje de error
+            return Cita_Medica.objects.none()
+        if(type_user == "PACIENTE"):
+        # Filtrar citas médicas por el usuario autenticado y que estén agendadas
+            return Cita_Medica.objects.filter(created_by=self.request.user.id, agendado=True)
+
+        return Cita_Medica.objects.filter(doctor=self.request.user.id, agendado=True)
