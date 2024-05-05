@@ -18,7 +18,7 @@ class Cita_Medica(models.Model):
     invitation_sent = models.BooleanField(default=False)
     doctor = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name="Doctor")
     google_calendar_event_id = models.CharField(max_length=120, blank=True, null=True)
+    google_meet_link = models.URLField(max_length=500,default=None, blank=True, null=True)
     agendado = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.title
+ 
