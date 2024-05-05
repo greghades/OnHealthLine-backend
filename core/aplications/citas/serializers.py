@@ -8,7 +8,7 @@ class CitaSerializer(ModelSerializer[Cita_Medica]):
 
     class Meta:
         model = Cita_Medica
-        fields = ('id', 'title', 'description', 'start_at', 'end_at', 'location', 'attendee','google_meet_link')
+        fields = ('id', 'title', 'description', 'start_at', 'end_at', 'location', 'attendee','google_calendar_event_id','google_meet_link')
         extra_kwargs = {'attendee': {'required': False, "allow_null": True}}
 
 class CitasListSerializer(ModelSerializer[Cita_Medica]):
@@ -41,5 +41,5 @@ class CitasListSerializer(ModelSerializer[Cita_Medica]):
 
     class Meta:
         model = Cita_Medica
-        fields = ('nombre', 'especialidad','start_at', 'end_at', 'attendee','google_meet_link')
+        fields = ('nombre', 'especialidad','start_at', 'end_at', 'attendee','google_calendar_event_id','google_meet_link')
         extra_kwargs = {'attendee': {'required': False, "allow_null": True}}

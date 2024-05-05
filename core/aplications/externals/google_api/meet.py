@@ -19,7 +19,7 @@ def authorize_credentials():
         credentials = run_flow(flow, STORAGE, http=http)
     return credentials
 
-def crear_enlace_google_meet():
+def crear_enlace_google_meet(titulo, descripcion, invitados,start_at,end_at):
     # Autorizar credenciales
     credentials = authorize_credentials()
 
@@ -30,34 +30,52 @@ def crear_enlace_google_meet():
     fecha_inicio = datetime.now() + timedelta(hours=1)
     fecha_fin = fecha_inicio + timedelta(hours=2)
 
+    # Crear el evento en Google Calendar
     evento = {
-        'summary': 'Reunión de Google Meet',
-        'start': {
-            'dateTime': fecha_inicio.strftime('%Y-%m-%dT%H:%M:%S'),
-            'timeZone': 'America/Los_Angeles',
-        },
-        'end': {
-            'dateTime': fecha_fin.strftime('%Y-%m-%dT%H:%M:%S'),
-            'timeZone': 'America/Los_Angeles',
-        },
-        'conferenceData': {
-            'createRequest': {
-                'requestId': 'randomstring',  # Debe ser una cadena aleatoria
-                'conferenceSolutionKey': {
-                    'type': 'hangoutsMeet'
+            'summary': titulo,
+            'description': descripcion,
+            'start': {
+                'dateTime': start_at.strftime('%Y-%m-%dT%H:%M:%S'),
+                'timeZone': 'America/Los_Angeles',
+            },
+            'end': {
+                'dateTime': end_at.strftime('%Y-%m-%dT%H:%M:%S'),
+                'timeZone': 'America/Los_Angeles',
+            },
+            'attendees': [{'email': correo} for correo in invitados],
+            'conferenceData': {
+                'createRequest': {
+                    'requestId': 'randomstring',  # Debe ser una cadena aleatoria
+                    'conferenceSolutionKey': {
+                        'type': 'hangoutsMeet'
+                    },
+                    'conferenceSolution': {
+                        'type': 'hangoutsMeet'
+                    },
+                    'entryPoints': [
+                        {
+                            'entryPointType': 'video',
+                            'uri': 'https://meet.google.com/link',
+                            'label': 'Enlace de Google Meet'
+                        }
+                    ]
                 }
-            }
+            },
+            "sendNotifications": True
         }
-    }
-
-    # Crea el evento (reunión) en Google Calendar
+        
     evento_creado = service.events().insert(calendarId='primary', body=evento, conferenceDataVersion=1).execute()
-
-    # Obtener enlace de la reunión de Google Meet
-    enlace_reunion = evento_creado.get('hangoutLink')
-
-    return enlace_reunion
+    
+    return evento_creado
 
 # # Ejemplo de uso
-# enlace_reunion = crear_enlace_google_meet()
+# titulo_evento = 'Reunión de equipo'
+# descripcion_evento = 'Reunión semanal para discutir el progreso del proyecto.'
+# fecha_inicio_evento = datetime(2024, 5, 5, 10, 0)  # 5 de mayo de 2024 a las 10:00 AM
+# fecha_fin_evento = fecha_inicio_evento + timedelta(hours=1)  # Duración de una hora
+# invitados_evento = ['correo1@example.com', 'correo2@example.com', 'correo3@example.com']
+
+# # Llama a la función para crear el evento en Google Calendar
+# enlace_reunion = crear_enlace_google_meet(titulo_evento, descripcion_evento, fecha_inicio_evento, fecha_fin_evento, invitados_evento)
+
 # print("Enlace de la reunión de Google Meet:", enlace_reunion)

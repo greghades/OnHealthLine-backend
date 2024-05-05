@@ -82,19 +82,21 @@ class CreateEventView(CreateAPIView):
         # Validar si el doctor tiene disponible el horario
         if not self.doctor_tiene_horario_disponible(medico.id, start_at, end_at):
             raise ValidationError("El doctor no tiene disponible este horario")
-        google_meet_link = crear_enlace_google_meet()
-        print(google_meet_link)
+      #  google_meet_link = crear_enlace_google_meet()
+
         # Crear la cita médica con el campo agendado en True
         with transaction.atomic():
-            cita = serializer.save(doctor_id=doctor_id, attendee=[request.user.email, medico.email], created_by=request.user, agendado=True,google_meet_link=google_meet_link)
+            cita = serializer.save(doctor_id=doctor_id, attendee=[request.user.email, medico.email],title=horarios.titulo,description=horarios.descripcion, created_by=request.user, agendado=True)
 
         # Llamar a la función para crear el evento en el calendario de Google
-        google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email, medico.email,horarios)
-        
+        emails= [request.user.email, medico.email]
+        google_calendar_response = crear_enlace_google_meet(horarios.titulo,horarios.descripcion,emails,start_at,end_at)
+        #google_calendar_response = nocodeapi_google_calendar_create_event(serializer.data, request.user.email, medico.email,horarios)
+        cita.google_meet_link = google_calendar_response['hangoutLink']
         # Actualizar el campo google_calendar_event_id de la cita
-        cita.google_calendar_event_id = google_calendar_response
+        cita.google_calendar_event_id = google_calendar_response['htmlLink']
         cita.invitation_sent = True
-        cita.google_meet_link = google_meet_link
+
 
         cita.save()
 
