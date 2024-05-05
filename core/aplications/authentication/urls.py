@@ -8,7 +8,7 @@ urlpatterns = [
     path('delete/<int:pk>/', DeleteView.as_view()),
     path('update/<int:pk>/',UpdateUser.as_view()),
     path('listUsers/',ListUsers.as_view()),
-    path('passwordReset/',SendCodeResetPassword.as_view()),
-    path('validateCode/',ValidationCodeView.as_view()),
-    path('resetPasswordView/',ResetPasswordView.as_view())
+    path('password/code/',SendCodeResetPassword.as_view()),
+    path('password/validate_code/',ValidationCodeView.as_view()),
+    path('password/reset/',ResetPasswordView.as_view())
 ]
