@@ -39,10 +39,12 @@ class LoginView(generics.GenericAPIView):
         try:
             user = CustomUser.objects.get(email=email)
             
-            # Verificar si el usuario es None o si la contraseña no coincide
-            if user is None or user.password != password:
+            if not check_password(password, user.password):
                 return Response(LOGIN_CREDENTIALS_ERROR, status=status.HTTP_401_UNAUTHORIZED)
-            
+        
+
+             # Verificar si la contraseña es correcta
+          
             # Verificar si el usuario está activo
             if not user.is_active:
                 return Response(INACTIVE_USER_ERROR, status=status.HTTP_401_UNAUTHORIZED)
