@@ -19,7 +19,7 @@ from .messages.responses_ok import CODE_VALIDATED, DELETED_USER, EMAIL_SEND, LOG
 from .messages.responses_error import USER_ALREADY_EXISTS_ERROR,INACTIVE_USER_ERROR,CHANGED_PASSWORD_ERROR, CODER_VERIFICATION_ERROR, LOGIN_CREDENTIALS_REQUIRED_ERROR, LOGIN_CREDENTIALS_ERROR,LOGOUT_ERROR, NOT_FOUND_USER
 from .helpers.content_emails import PASSWORD_RESET
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password,make_password
 from .helpers.randCodes import generatedCode
 
 # Create your views here.
@@ -119,6 +119,9 @@ class RegistroView(generics.GenericAPIView):
 
     def post(self, request):
         # Serializar los datos del usuario
+
+        hashed_password = make_password(request.data['password'])
+        request.data['password'] = hashed_password
         user_serializer = UserSerializer(data=request.data)
         
         if user_serializer.is_valid():
