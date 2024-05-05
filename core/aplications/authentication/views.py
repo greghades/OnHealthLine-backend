@@ -182,11 +182,32 @@ class UpdateUser(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
 
     def put(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # Detectar el tipo de usuario y actualizar los campos correspondientes
+        user_type = instance.user_type
+        if user_type == 'MEDICO':
+            descripcion = request.data.get('descripcion', None)
+            if descripcion is not None:
+                medico_instance = instance.medico
+                medico_instance.descripcion = descripcion
+                medico_instance.save()
+        elif user_type == 'PACIENTE':
+            birthdate = request.data.get('birthdate', None)
+            address = request.data.get('address', None)
+            if birthdate is not None:
+                paciente_instance = instance.paciente
+                paciente_instance.birthdate = birthdate
+                paciente_instance.save()
+            if address is not None:
+                paciente_instance = instance.paciente
+                paciente_instance.address = address
+                paciente_instance.save()
 
-        return Response({
-            'data':request.data,
-            'message':UPDATE_OK
-        },status=status.HTTP_202_ACCEPTED)
+        return Response({'data': serializer.data, 'message': 'UPDATE_OK'}, status=status.HTTP_202_ACCEPTED)
 
 
 class ListUsers(generics.ListAPIView):
